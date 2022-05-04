@@ -11,7 +11,7 @@ import schedule
 from openpyxl import Workbook
 import time
 
-#token = "5308846060:AAE4ishCZ3H0Z0K8DgJ9ZIRKGgCGIZnDVBs"
+token = "5308846060:AAE4ishCZ3H0Z0K8DgJ9ZIRKGgCGIZnDVBs"
 
 token_for_ozon = "5326675413:AAEsPlhta4gDx7QyNtXN_eCvjiGDcqaK4eY"
 
@@ -27,10 +27,14 @@ class DataBase:
         self.load()
 
     def load(self):
-        if os.path.getsize('database.db') <= 0:
-            self.db = {}
-        else:
-            with open('database.db', 'rb') as f:
+        if not os.path.exists('database.db'):
+            file = open('database.db', 'wb+')
+            file.close()
+        with open('database.db', 'rb') as f:
+            print(f.read())
+            if f.read() == b'':
+                self.db = {}
+            else:
                 self.db = pickle.load(f)
                 print(self.db)
 
@@ -337,7 +341,8 @@ def scheduler():
     while True:
         schedule.run_pending()
 
-t = Thread(target=scheduler)
-t.start()
+if __name__ == '__main__':
+    t = Thread(target=scheduler)
+    t.start()
 
-bot.infinity_polling()
+    bot.infinity_polling()
