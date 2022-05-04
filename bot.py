@@ -1,4 +1,3 @@
-from types import NoneType
 import requests
 import re
 import telebot
@@ -10,6 +9,8 @@ from threading import Thread
 import schedule
 from openpyxl import Workbook
 import time
+
+NoneType = type(None)
 
 token = "5308846060:AAE4ishCZ3H0Z0K8DgJ9ZIRKGgCGIZnDVBs"
 
