@@ -189,7 +189,6 @@ def get_commands(msg):
     elif command == 'Подробный отчет по всем товарам':
         get_report(msg)
     elif command == 'show':
-        print(database.getDB().keys())
         bot.send_message(msg.chat.id, ' '.join(str(key) for key in database.getDB().keys()))
 
 def add_product(msg):
@@ -199,7 +198,7 @@ def add_product(msg):
         chat_id = msg.chat.id
         quantity, name, prices = get_values(id)
 
-        print(quantity, name, prices)
+        #print(quantity, name, prices)
         
         if [quantity, name, prices] != [0,0,0]:
             if database.exist(chat_id, id):
