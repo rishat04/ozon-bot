@@ -8,7 +8,6 @@ import pickle
 from threading import Thread
 import schedule
 from openpyxl import Workbook
-import time
 
 NoneType = type(None)
 
@@ -16,7 +15,7 @@ token = "5308846060:AAE4ishCZ3H0Z0K8DgJ9ZIRKGgCGIZnDVBs"
 
 token_for_ozon = "5326675413:AAEsPlhta4gDx7QyNtXN_eCvjiGDcqaK4eY"
 
-bot = telebot.TeleBot(token=token_for_ozon)
+bot = telebot.TeleBot(token=token)
 
 api_cart_url = 'https://www.ozon.ru/api/composer-api.bx/_action/addToCart'
 
@@ -29,15 +28,15 @@ class DataBase:
 
     def load(self):
         if not os.path.exists('database.db'):
-            file = open('database.db', 'wb+')
+            file = open('database.db', 'w+')
             file.close()
-        with open('database.db', 'rb') as f:
-            print(f.read())
-            if f.read() == b'':
-                self.db = {}
-            else:
+        
+        if os.path.getsize('database.db') > 0:
+            with open('database.db', 'rb') as f:
                 self.db = pickle.load(f)
                 print(self.db)
+        else:
+            self.db = {}
 
     def writeUsername(self, chat_id):
         if chat_id not in self.db:
@@ -69,6 +68,9 @@ class DataBase:
 
     def getDB(self):
         return self.db
+
+    def get_users(self):
+        return self.db.keys()
 
     def get_ids(self, chat_id):
         return self.db[chat_id].keys()
@@ -127,12 +129,36 @@ def start_bot(msg):
     database.writeUsername(msg.chat.id)
 
     bot.send_message(msg.chat.id,
-    'Привет!\n'+
-    'Я помогаю с аналитикой селлерам, которые продают на OZON.\n'+
-    'Что я умею:\n'+
-    '1) Отслеживать РЕАЛЬНЫЕ продажи конкурентов\n',
+    'Привет!\n\n'+
+    'Я помогаю селлерам, которые продают на OZON, вместе мы сможем увеличить твои продажи и обойти конкурентов.\n'+
+    'Что я умею уже сейчас:\n'+
+    '1) Отслеживать РЕАЛЬНЫЕ продажи конкурентов\n\n'+
+    'Функции в разработке:\n'+
+    '1) Отслеживание цен конкурентов',
     reply_markup=keyboard
     )
+
+@bot.message_handler(commands=['снять'])
+def remove_restrictions(msg):
+    bot.send_message(msg.chat.id, 'Введите код доступа:')
+    bot.register_next_step_handler(msg, restrictions_next_step)
+
+def restrictions_next_step(msg):
+    password = 'максим рулит'
+    if password == msg.text:
+        bot.send_message(msg.chat.id, 'Верный пароль')
+        users = database.get_users()
+        keyboard = types.InlineKeyboardMarkup()
+        for user in users:
+            keyboard.add(types.InlineKeyboardButton(user, callback_data='user_{}'.format(user)))
+        bot.send_message(msg.chat.id,'Список пользователей', reply_markup=keyboard)
+    else:
+        bot.send_message(msg.chat.id,'Неверный пароль')
+
+#@bot.callback_query_handler(func=lambda call: True)
+#def change_restriction(call):
+#    _, user = call.data.split('_')
+#    bot.answer_callback_query(call.id, user)
 
 @bot.message_handler(content_types=['text'])
 def get_commands(msg):
@@ -168,12 +194,13 @@ def get_commands(msg):
         bot.send_message(msg.chat.id, ' '.join(str(key) for key in database.getDB().keys()))
 
 def add_product(msg):
-    print(msg.text.split('\n'))
     links = msg.text.split('\n')
     for link in links:
         id = get_id(link)
         chat_id = msg.chat.id
         quantity, name, prices = get_values(id)
+
+        print(quantity, name, prices)
         
         if [quantity, name, prices] != [0,0,0]:
             if database.exist(chat_id, id):
@@ -191,13 +218,15 @@ def add_product(msg):
 def get_id(url):
     if url.startswith('https://www.ozon'):
         resp = requests.get(url)
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        line = soup.find('span', {'class':'p9k qk'}).get_text()
-        id = ''
-        for i in line:
-            if i in ['0','1','2','3','4','5','6','7','8','9','0']:
-                id += i
-        return id[0:]
+        id = re.search('товара</span>: (.+?)</span>', resp.text).group(1)
+        #soup = BeautifulSoup(resp.text, 'html.parser')
+        #line = soup.find('span', {'class':'p9k qk'}).get_text()
+        #id = ''
+        #for i in line:
+        #    if i in ['0','1','2','3','4','5','6','7','8','9','0']:
+        #        id += i
+        #return id[0:]
+        return id
     else:
         return url
 
@@ -213,21 +242,21 @@ def get_values(id):
         product_html = requests.get('https://www.ozon.ru/product/' + id)
 
         soup = BeautifulSoup(product_html.text, 'html.parser')
-        name = soup.find('h1', {'class':'z5k'}).get_text()
+        name = soup.title.string
         if len(name) > 30:
             name = name[0:30]
-        prices = []
-        for c in ['yk3 yk3', 'k4y', 'yk3']:
-            element = soup.find('span', {'class':c})
-            if type(element) != NoneType:
-                prices.append(element.get_text()[0:-2].replace('\u2009', ''))
-        return quantity, name, prices
+            if '-' in name:
+                name = name.split('--')[0]
+        resp = requests.get('https://www.ozon.ru/product/{}'.format(id))
+        price = re.search('InStock","price":"(.+?)","priceCurrency":"RUB"', resp.text).group(1)
+        return quantity, name, price
     except Exception as e:
         print('error', e)
         return [0,0,0]
 
 @bot.callback_query_handler(func=lambda call: True)
-def delete_product(call):    
+def delete_product(call):
+    bot.answer_callback_query(call.id, 'Товар удален')
     _, id = call.data.split('_')
     chat_id = call.message.chat.id
     if database.exist(chat_id, id):
@@ -268,10 +297,10 @@ def showYesterdayReport(msg):
 
             recived_quantity = abs(recived_quantity)
             
-            text = ''.join('Товар с наименованием "{}"\n'+
-                                'Продаж за вчера была на сумму: {}\n'+
-                                'Проданно товара: {}\n'+
-                                'Вчера была поставка товара: {}').format(name, total_quantity * price, total_quantity, recived_quantity)
+            text = ''.join('Товар "{}"\n'+
+                                'Продажи вчера(шт.): {}\n'+
+                                'Выручка вчера(руб.): {}\n'+
+                                'Пополнение остатков вчера(шт.): {}').format(name, total_quantity * price, total_quantity, recived_quantity)
             bot.send_message(chat, text)
         
 def get_report(msg):
