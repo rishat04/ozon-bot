@@ -34,7 +34,6 @@ class DataBase:
         if os.path.getsize('database.db') > 0:
             with open('database.db', 'rb') as f:
                 self.db = pickle.load(f)
-                print(self.db)
         else:
             self.db = {}
 
