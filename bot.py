@@ -15,7 +15,7 @@ token = "5308846060:AAE4ishCZ3H0Z0K8DgJ9ZIRKGgCGIZnDVBs"
 
 token_for_ozon = "5326675413:AAEsPlhta4gDx7QyNtXN_eCvjiGDcqaK4eY"
 
-bot = telebot.TeleBot(token=token)
+bot = telebot.TeleBot(token=token_for_ozon)
 
 api_cart_url = 'https://www.ozon.ru/api/composer-api.bx/_action/addToCart'
 
