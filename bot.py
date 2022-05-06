@@ -245,7 +245,7 @@ def get_id(url):
     #    'http': 'http://185.162.228.100:80',
     #    'https': 'http://91.224.62.194:8080'
     #}
-    proxy = { 'http': 'http://dproxy.site:12190' }
+    proxy = { 'https': 'http://92.63.111.110:12190' }
     r =requests.get('https://www.ozon.ru', proxies=proxy)
     print('testing', r.status_code)
     if url.startswith('https://www.ozon'):
