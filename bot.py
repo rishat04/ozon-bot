@@ -1,3 +1,5 @@
+#-*- coding: utf-8 -*-
+
 import requests
 import re
 import telebot
@@ -34,6 +36,7 @@ class DataBase:
         if os.path.getsize('database.db') > 0:
             with open('database.db', 'rb') as f:
                 self.db = pickle.load(f)
+                #print(self.db)
         else:
             self.db = {}
 
@@ -59,8 +62,31 @@ class DataBase:
         else:
             self.db[chat_id][id]['days'][days_length - 1].append(quantity)
 
+    def get_permission_from_user(self, user):
+        if 'permission' not in self.db[user]:
+            self.db[user]['permission'] = 0
+            self.save()
+        return self.db[user]['permission']
+
+    def set_permission_to_user(self, user, perm):
+        self.db[user]['permission'] = perm
+        self.save()
+
+    def get_phone_from_user(self, user):
+        if 'phone' not in self.db[user]:
+            self.db[user]['phone'] = ''
+            self.save()
+        return self.db[user]['phone']
+
+    def set_phone_for_user(self, user, phone):
+        self.db[user][phone] = phone
+        self.save()
+
     def get_products_amount(self, chat_id):
-        return len(self.db[chat_id].keys())
+        if 'permission' in self.db[chat_id]:
+            return len(self.db[chat_id].keys()) - 1
+        else:
+            return len(self.db[chat_id].keys())
 
     def get_days(self, chat_id, id):
         return self.db[chat_id][id]['days']
@@ -137,27 +163,21 @@ def start_bot(msg):
     reply_markup=keyboard
     )
 
-@bot.message_handler(commands=['снять'])
+@bot.message_handler(commands=['dragonfly'])
 def remove_restrictions(msg):
     bot.send_message(msg.chat.id, 'Введите код доступа:')
     bot.register_next_step_handler(msg, restrictions_next_step)
 
 def restrictions_next_step(msg):
-    password = 'максим рулит'
+    password = 'magic'
     if password == msg.text:
         bot.send_message(msg.chat.id, 'Верный пароль')
-        users = database.get_users()
         keyboard = types.InlineKeyboardMarkup()
-        for user in users:
-            keyboard.add(types.InlineKeyboardButton(user, callback_data='user_{}'.format(user)))
-        bot.send_message(msg.chat.id,'Список пользователей', reply_markup=keyboard)
+        keyboard.add(types.InlineKeyboardButton('Статистика', callback_data='command_stat'))
+        keyboard.add(types.InlineKeyboardButton('Контроль ограничений', callback_data='command_rest'))
+        bot.send_message(msg.chat.id,'Что делаем?', reply_markup=keyboard)
     else:
         bot.send_message(msg.chat.id,'Неверный пароль')
-
-#@bot.callback_query_handler(func=lambda call: True)
-#def change_restriction(call):
-#    _, user = call.data.split('_')
-#    bot.answer_callback_query(call.id, user)
 
 @bot.message_handler(content_types=['text'])
 def get_commands(msg):
@@ -181,11 +201,12 @@ def get_commands(msg):
         else:
             markup = types.InlineKeyboardMarkup()
             for id in database.get_ids(msg.chat.id):
+                if id in ['permission', 'phone']:
+                    continue
                 name = database.get_product_name(msg.chat.id, id)
                 text = '{} - ID {}'.format(name, id)
                 markup.add(types.InlineKeyboardButton(text, callback_data='id_' + id))
             bot.send_message(msg.chat.id, 'Выберите ID товара для удаления', reply_markup=markup)
-            #bot.register_next_step_handler(msg, delete_product)
     elif command == 'Подробный отчет по всем товарам':
         get_report(msg)
     elif command == 'show':
@@ -193,7 +214,16 @@ def get_commands(msg):
 
 def add_product(msg):
     links = msg.text.split('\n')
+    #if not database.get_phone_for_user(msg.chat.id):
+     #   print(msg)
+      #  phone = '@{}'.format(msg.from_user.username)
+       # database.set_phone_from_user(msg.chat.id, phone)
     for link in links:
+        if not database.get_permission_from_user(msg.chat.id):
+            if database.get_products_amount(msg.chat.id) > 9:
+                bot.send_message(msg.chat.id, 'На отслеживание можно поставить не более 10 товаров.')
+                return
+        
         id = get_id(link)
         chat_id = msg.chat.id
         quantity, name, prices = get_values(id)
@@ -204,10 +234,7 @@ def add_product(msg):
             if database.exist(chat_id, id):
                 bot.send_message(msg.chat.id, 'Товар {} уже отслеживается.'.format(name))      
             else:
-                if database.get_products_amount(msg.chat.id) > 9:
-                    bot.send_message(msg.chat.id, 'На отслеживание можно поставить не более 10 товаров.')
-                    return
-                database.write(chat_id, id, name, int(min(prices)), int(quantity))
+                database.write(chat_id, id, name, int(prices), int(quantity))
                 database.save()
                 bot.send_message(msg.chat.id, 'Товар {} поставлен на отслеживание.'.format(name))
         else: 
@@ -216,8 +243,8 @@ def add_product(msg):
 def get_id(url):
     if url.startswith('https://www.ozon'):
         resp = requests.get(url)
-        
         id = re.search(',"sku":(.+?)},"location"', resp.text).group(1)
+        #print(id)
         #soup = BeautifulSoup(resp.text, 'html.parser')
         #line = soup.find('span', {'class':'p9k qk'}).get_text()
         #id = ''
@@ -248,6 +275,7 @@ def get_values(id):
                 name = name.split('--')[0]
         resp = requests.get('https://www.ozon.ru/product/{}'.format(id))
         price = re.search('InStock","price":"(.+?)","priceCurrency":"RUB"', resp.text).group(1)
+        #print(name, price, quantity)
         return quantity, name, price
     except Exception as e:
         print('error', e)
@@ -255,14 +283,53 @@ def get_values(id):
 
 @bot.callback_query_handler(func=lambda call: True)
 def delete_product(call):
-    bot.answer_callback_query(call.id, 'Товар удален')
     _, id = call.data.split('_')
-    chat_id = call.message.chat.id
-    if database.exist(chat_id, id):
-        database.delete(chat_id, id)
-        database.save()
+    if _ == 'id':
+        chat_id = call.message.chat.id
+        if database.exist(chat_id, id):
+            database.delete(chat_id, id)
+            database.save()
 
-        bot.answer_callback_query(call.id, 'Товар удален')
+            bot.answer_callback_query(call.id, 'Товар удален')
+    if _ == 'user':
+        id = int(id)
+        if database.get_permission_from_user(id) == 0:
+            database.set_permission_to_user(id, 1)
+            bot.answer_callback_query(call.id, 'Пользователю {} убрали ограничения'.format(_))
+            return
+        if database.get_permission_from_user(id) == 1:
+            database.set_permission_to_user(id, 0)
+            bot.answer_callback_query(call.id, 'Пользователю {} поставили ограничения ограничения'.format(_))
+            return
+    if _ == 'command' and id == 'stat':
+        users = database.get_users()
+        users_count = len(users)
+        products_count = 0
+        for user in users:
+            if user in ['permission', 'phone']:
+                continue
+            products_count += database.get_products_amount(user)
+
+        bot.send_message(call.message.chat.id, 'Статистика: \n' +
+                                'Количество пользователей: ' + str(users_count) + '\n' +
+                                 'Товаров на отслеживании: ' + str(products_count)
+                             )
+    if _ == 'command' and id == 'rest':
+        users = database.get_users()
+        keyboard = types.InlineKeyboardMarkup()
+        for user in users:
+            #text = '{} - {}'.format(msg.from_user.first_name, user)
+            if not database.get_phone_from_user(user):
+                phone = user
+            else:
+                phone = database.get_phone_from_user(user)
+            if database.get_permission_from_user(user):
+                text = '{} - {}'.format(phone, 'Нет ограничений')
+            else:
+                text = '{} - {}'.format(phone, 'Ограничение в 10 товаров')
+            keyboard.add(types.InlineKeyboardButton(text, callback_data='user_{}'.format(user)))
+            bot.send_message(call.message.chat.id, 'Списко пользователей', reply_markup=keyboard)
+        
 
 def showYesterdayReport(msg):
     if msg == NoneType:
@@ -271,13 +338,21 @@ def showYesterdayReport(msg):
         chat_ids = [msg.chat.id]
     for chat in chat_ids:
         
-        id_list = database.get_ids(chat)
+        if database.get_permission_from_user(chat):
+            id_list = database.get_ids(chat)
+        else:
+            if database.get_products_amount(chat) > 10:
+                id_list = list(database.get_ids(chat))[:11]
+            else:
+                id_list = database.get_ids(chat)
         if len(id_list) == 0:
             bot.send_message(chat, 'У вас нет товаров на отслеживании')
             return
         else:
             bot.send_message(chat, 'Отчет за вчерашний день:')
         for id in id_list:
+            if id in ['permission', 'phone']:
+                continue
             day = database.get_last_day(chat, id)
             name = database.get_product_name(chat, id)
             if len(day) < 3:
@@ -299,7 +374,7 @@ def showYesterdayReport(msg):
             text = ''.join('Товар "{}"\n'+
                                 'Продажи вчера(шт.): {}\n'+
                                 'Выручка вчера(руб.): {}\n'+
-                                'Пополнение остатков вчера(шт.): {}').format(name, total_quantity * price, total_quantity, recived_quantity)
+                                'Пополнение остатков вчера(шт.): {}').format(name, total_quantity, total_quantity * price, recived_quantity)
             bot.send_message(chat, text)
         
 def get_report(msg):
@@ -310,7 +385,20 @@ def get_report(msg):
     ]
     present_data = []
     present_data.append(fields)
-    for id in database.get_ids(msg.chat.id):
+
+    chat = msg.chat.id
+
+    if database.get_permission_from_user(chat):
+            id_list = database.get_ids(chat)
+    else:
+        if database.get_products_amount(chat) > 10:
+            id_list = list(database.get_ids(chat))[:11]
+        else:
+            id_list = database.get_ids(chat)
+    
+    for id in id_list:
+        if id in ['permission', 'phone']:
+            continue
         name = database.get_product_name(msg.chat.id, id)
         count_days = 0
         average_price = 0
@@ -354,11 +442,12 @@ def get_report(msg):
 def get_second_quantity(t):
     chat_ids = database.getDB().keys()
     for chat in chat_ids:
-        for id in database.get_ids(chat):
-            quantity, name, prices = get_values(id)
-            database.write(chat, id, name, int(min(prices)), int(quantity))
-            if t == '00:00':
-                database.set_new_day(chat, id, int(min(prices)), int(quantity))
+        if chat != 'permission':
+            for id in database.get_ids(chat):
+                quantity, name, prices = get_values(id)
+                database.write(chat, id, name, int(prices), int(quantity))
+                if t == '00:00':
+                    database.set_new_day(chat, id, int(prices), int(quantity))
     database.save()
 
 def scheduler():
