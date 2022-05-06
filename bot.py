@@ -333,7 +333,7 @@ def delete_product(call):
             else:
                 text = '{} - {}'.format(phone, 'Ограничение в 10 товаров')
             keyboard.add(types.InlineKeyboardButton(text, callback_data='user_{}'.format(user)))
-            bot.send_message(call.message.chat.id, 'Списко пользователей', reply_markup=keyboard)
+        bot.send_message(call.message.chat.id, 'Списко пользователей', reply_markup=keyboard)
         
 
 def showYesterdayReport(msg):
