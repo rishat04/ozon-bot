@@ -449,6 +449,8 @@ def get_second_quantity(t):
     for chat in chat_ids:
         if chat != 'permission':
             for id in database.get_ids(chat):
+                if id in ['phone', 'permission]:
+                    continue
                 quantity, name, prices = get_values(id)
                 database.write(chat, id, name, int(prices), int(quantity))
                 if t == '00:00':
