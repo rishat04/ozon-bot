@@ -241,6 +241,8 @@ def add_product(msg):
             bot.send_message(msg.chat.id, 'Товар не найден.')
 
 def get_id(url):
+    r =requests.get('https://www.ozon.ru')
+    print('testing', r.status_code)
     if url.startswith('https://www.ozon'):
         resp = requests.get(url)
         print('get_id', resp.status_code)
