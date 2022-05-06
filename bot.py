@@ -218,7 +218,7 @@ def add_product(msg):
 def get_id(url):
     if url.startswith('https://www.ozon'):
         resp = requests.get(url)
-        id = re.search('товара</span>: (.+?)</span>', resp.text).group(1)
+        id = re.search(',"sku":(.+?)},"location"', resp.text).group(1)
         #soup = BeautifulSoup(resp.text, 'html.parser')
         #line = soup.find('span', {'class':'p9k qk'}).get_text()
         #id = ''
