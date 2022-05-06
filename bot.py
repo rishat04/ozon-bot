@@ -243,6 +243,7 @@ def add_product(msg):
 def get_id(url):
     if url.startswith('https://www.ozon'):
         resp = requests.get(url)
+        print('get_id', resp.status_code)
         id = re.search(',"sku":(.+?)},"location"', resp.text).group(1)
         #print(id)
         #soup = BeautifulSoup(resp.text, 'html.parser')
@@ -262,10 +263,12 @@ def get_values(id):
         s = requests.Session()
         r = s.post(api_cart_url, json=data)
         html_cart = s.get('https://www.ozon.ru/cart')
+        print(html_cart.status_code)
         match = re.search('maxQuantity(.+?)minQuantity', html_cart.text).group(1)
         quantity = get_quantity(match)
 
         product_html = requests.get('https://www.ozon.ru/product/' + id)
+        print('product_html', product_html.status_code)
 
         soup = BeautifulSoup(product_html.text, 'html.parser')
         name = soup.title.string
