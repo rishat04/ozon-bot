@@ -241,11 +241,11 @@ def add_product(msg):
             bot.send_message(msg.chat.id, 'Товар не найден.')
 
 def get_id(url):
-    proxy = {
-        'http': 'http://185.162.228.100:80',
-        'https': 'http://91.224.62.194:8080'
-    }
-    r =requests.get('https://www.ozon.ru', proxies=proxy)
+    #proxy = {
+    #    'http': 'http://185.162.228.100:80',
+    #    'https': 'http://91.224.62.194:8080'
+    #}
+    r =requests.get('https://www.ozon.ru')
     print('testing', r.status_code)
     if url.startswith('https://www.ozon'):
         resp = requests.get(url)
