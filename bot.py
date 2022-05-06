@@ -241,15 +241,11 @@ def add_product(msg):
             bot.send_message(msg.chat.id, 'Товар не найден.')
 
 def get_id(url):
-    #proxy = {
-    #    'http': 'http://185.162.228.100:80',
-    #    'https': 'http://91.224.62.194:8080'
-    #}
     proxy = { 'https': 'http://GECFau:HYp9ekEZ8SeX@92.63.111.110:12190' }
-    r =requests.get('https://www.ozon.ru', proxies=proxy)
-    print('testing', r.status_code)
+    #r =requests.get('https://www.ozon.ru', proxies=proxy)
+    #print('testing', r.status_code)
     if url.startswith('https://www.ozon'):
-        resp = requests.get(url)
+        resp = requests.get(url, proxies=proxy)
         print('get_id', resp.status_code)
         id = re.search(',"sku":(.+?)},"location"', resp.text).group(1)
         #print(id)
@@ -266,15 +262,16 @@ def get_id(url):
 
 def get_values(id):
     try:
+        proxy = { 'https': 'http://GECFau:HYp9ekEZ8SeX@92.63.111.110:12190' }
         data = [{ 'id' : int(id), 'quantity' : 1}]
         s = requests.Session()
-        r = s.post(api_cart_url, json=data)
+        r = s.post(api_cart_url, json=data, proxies=proxy)
         html_cart = s.get('https://www.ozon.ru/cart')
         print(html_cart.status_code)
         match = re.search('maxQuantity(.+?)minQuantity', html_cart.text).group(1)
         quantity = get_quantity(match)
 
-        product_html = requests.get('https://www.ozon.ru/product/' + id)
+        product_html = requests.get('https://www.ozon.ru/product/' + id, proxies=proxy)
         print('product_html', product_html.status_code)
 
         soup = BeautifulSoup(product_html.text, 'html.parser')
@@ -283,7 +280,7 @@ def get_values(id):
             name = name[0:30]
             if '-' in name:
                 name = name.split('--')[0]
-        resp = requests.get('https://www.ozon.ru/product/{}'.format(id))
+        resp = requests.get('https://www.ozon.ru/product/{}'.format(id), proxies=proxy)
         price = re.search('InStock","price":"(.+?)","priceCurrency":"RUB"', resp.text).group(1)
         #print(name, price, quantity)
         return quantity, name, price
