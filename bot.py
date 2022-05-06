@@ -267,7 +267,7 @@ def get_values(id):
         s = requests.Session()
         r = s.post(api_cart_url, json=data, proxies=proxy)
         html_cart = s.get('https://www.ozon.ru/cart', proxies=proxy)
-        print('html_cart', 'html_cart.status_code)
+        print('html_cart', html_cart.status_code)
         match = re.search('maxQuantity(.+?)minQuantity', html_cart.text).group(1)
         quantity = get_quantity(match)
 
