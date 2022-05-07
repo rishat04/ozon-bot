@@ -40,6 +40,11 @@ class DataBase:
         else:
             self.db = {}
 
+    def clear_products_from_user(self, user):
+        if user in self.db:
+            self.db[user] = {}
+        self.save()
+
     def writeUsername(self, chat_id):
         if chat_id not in self.db:
             self.db[chat_id] = {}
@@ -84,7 +89,10 @@ class DataBase:
 
     def get_products_amount(self, chat_id):
         if 'permission' in self.db[chat_id]:
-            return len(self.db[chat_id].keys()) - 1
+            if 'phone' in self.db[chat_id]:
+                return len(self.db[chat_id].keys()) - 2
+            else:
+                return len(self.db[chat_id].keys()) - 2
         else:
             return len(self.db[chat_id].keys())
 
@@ -153,6 +161,8 @@ def start_bot(msg):
 
     database.writeUsername(msg.chat.id)
 
+    #print(database.getDB())
+
     bot.send_message(msg.chat.id,
     'Привет!\n\n'+
     'Я помогаю селлерам, которые продают на OZON, вместе мы сможем увеличить твои продажи и обойти конкурентов.\n'+
@@ -175,6 +185,7 @@ def restrictions_next_step(msg):
         keyboard = types.InlineKeyboardMarkup()
         keyboard.add(types.InlineKeyboardButton('Статистика', callback_data='command_stat'))
         keyboard.add(types.InlineKeyboardButton('Контроль ограничений', callback_data='command_rest'))
+        keyboard.add(types.InlineKeyboardButton('Отчистить товары пользователей', callback_data='command_clear'))
         bot.send_message(msg.chat.id,'Что делаем?', reply_markup=keyboard)
     else:
         bot.send_message(msg.chat.id,'Неверный пароль')
@@ -187,6 +198,9 @@ def get_commands(msg):
                 'Начинаем собирать данные о продажах с момента отслеживания товара.\n' +
                 'Добавьте ID конкурентов, чьи продажи вы хотите узнать.'+
                 'Мы находимся в бета-тесте и пока что можно добавить не более 10 артикулов.')
+        if database.get_products_amount(msg.chat.id) == 0:
+            bot.send_message(msg.chat.id, 'У вас нет товаром на отслеживании')
+            return
         showYesterdayReport(msg)
     elif command == 'Добавить товар':
         img = open('res/id_example.png', 'rb')
@@ -196,7 +210,7 @@ def get_commands(msg):
         bot.send_photo(msg.chat.id, img)
         bot.register_next_step_handler(msg, add_product)
     elif command == 'Удалить товар':
-        if len(database.getDB()[msg.chat.id].keys()) == 0:
+        if database.get_products_amount(msg.chat.id) == 0:
             bot.send_message(msg.chat.id, 'У вас нет товаром на отслеживании')
         else:
             markup = types.InlineKeyboardMarkup()
@@ -241,12 +255,10 @@ def add_product(msg):
             bot.send_message(msg.chat.id, 'Товар не найден.')
 
 def get_id(url):
-    proxy = { 'https': 'http://GECFau:HYp9ekEZ8SeX@92.63.111.110:12190' }
-    #r =requests.get('https://www.ozon.ru', proxies=proxy)
-    #print('testing', r.status_code)
     if url.startswith('https://www.ozon'):
+        proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@mproxy.site:10678'}
         resp = requests.get(url, proxies=proxy)
-        print('get_id', resp.status_code)
+        print('requests get_id', resp.status_code)
         id = re.search(',"sku":(.+?)},"location"', resp.text).group(1)
         #print(id)
         #soup = BeautifulSoup(resp.text, 'html.parser')
@@ -262,17 +274,18 @@ def get_id(url):
 
 def get_values(id):
     try:
-        proxy = { 'https': 'http://GECFau:HYp9ekEZ8SeX@92.63.111.110:12190' }
+        proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@mproxy.site:10678'}
         data = [{ 'id' : int(id), 'quantity' : 1}]
         s = requests.Session()
         r = s.post(api_cart_url, json=data, proxies=proxy)
+        print('requests api', r.status_code)
         html_cart = s.get('https://www.ozon.ru/cart', proxies=proxy)
-        print('html_cart', html_cart.status_code)
+        print('requests cart', html_cart.status_code)
         match = re.search('maxQuantity(.+?)minQuantity', html_cart.text).group(1)
         quantity = get_quantity(match)
 
         product_html = requests.get('https://www.ozon.ru/product/' + id, proxies=proxy)
-        print('product_html', product_html.status_code)
+        print('requests product', product_html.status_code)
 
         soup = BeautifulSoup(product_html.text, 'html.parser')
         name = soup.title.string
@@ -281,6 +294,7 @@ def get_values(id):
             if '-' in name:
                 name = name.split('--')[0]
         resp = requests.get('https://www.ozon.ru/product/{}'.format(id), proxies=proxy)
+        print('requests price', resp.status_code)
         price = re.search('InStock","price":"(.+?)","priceCurrency":"RUB"', resp.text).group(1)
         #print(name, price, quantity)
         return quantity, name, price
@@ -336,6 +350,17 @@ def delete_product(call):
                 text = '{} - {}'.format(phone, 'Ограничение в 10 товаров')
             keyboard.add(types.InlineKeyboardButton(text, callback_data='user_{}'.format(user)))
         bot.send_message(call.message.chat.id, 'Списко пользователей', reply_markup=keyboard)
+
+    if _ == 'command' and id == 'clear':
+        bot.send_message(call.message.chat.id, 'Уверен что хочешь отчистить?\nДа/Нет')
+        bot.register_next_step_handler(call.message, clear_database)
+
+def clear_database(msg):
+    if msg.text == 'Да':
+        users = database.get_users()
+        for user in users:
+            database.clear_products_from_user(user)
+        bot.send_message(msg.chat.id, 'Готово!')
         
 
 def showYesterdayReport(msg):
@@ -449,14 +474,13 @@ def get_report(msg):
 def get_second_quantity(t):
     chat_ids = database.getDB().keys()
     for chat in chat_ids:
-        if chat != 'permission':
-            for id in database.get_ids(chat):
-                if id in ['phone', 'permission']:
-                    continue
-                quantity, name, prices = get_values(id)
-                database.write(chat, id, name, int(prices), int(quantity))
-                if t == '00:00':
-                    database.set_new_day(chat, id, int(prices), int(quantity))
+        for id in database.get_ids(chat):
+            if id in ['phone', 'permission']:
+                continue
+            quantity, name, prices = get_values(id)
+            database.write(chat, id, name, int(prices), int(quantity))
+            if t == '00:00':
+                database.set_new_day(chat, id, int(prices), int(quantity))
     database.save()
 
 def scheduler():
