@@ -551,8 +551,7 @@ def get_second_quantity(t):
             products = database.get_products(user)
             for product in products:
                 database.set_new_day(user, product)
-                database.save()
-get_second_quantity('')               
+                database.save()            
 
 
 def scheduler():
