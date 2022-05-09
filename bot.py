@@ -275,9 +275,9 @@ def get_values(data):
         proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@mproxy.site:10678'}
         
         s = requests.Session()
-        r = s.post(api_cart_url, json=data, proxies=proxy)
+        r = s.post(api_cart_url, json=data)
         
-        html = s.get('https://www.ozon.ru/cart', proxies=proxy)
+        html = s.get('https://www.ozon.ru/cart')
         
         print('get_values', html.status_code)
 
