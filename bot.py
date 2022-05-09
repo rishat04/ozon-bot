@@ -168,7 +168,7 @@ def start_bot(msg):
 
     database.writeUsername(msg.chat.id)
 
-    #print(database.getDB())
+    print(database.getDB())
 
     bot.send_message(msg.chat.id,
     'Привет!\n\n'+
@@ -272,12 +272,16 @@ def get_id(url):
 
 def get_values(data):
     try:
-        proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@mproxy.site:10678'}
+        proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@ee.mobileproxy.space:64315'}
+
+        #headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36'}
+        
         
         s = requests.Session()
-        r = s.post(api_cart_url, json=data)
+        r = s.post(api_cart_url, json=data, proxies=proxy)
+        time.sleep(random.randint(30, 60))
         
-        html = s.get('https://www.ozon.ru/cart')
+        html = s.get('https://www.ozon.ru/cart', proxies=proxy)
         
         print('get_values', html.status_code)
 
@@ -302,7 +306,6 @@ def get_values(data):
                     'quantity' : quantity
                     }
         return products
-
         
     except Exception as e:
         print('error', e)
@@ -510,18 +513,38 @@ def get_second_quantity(t):
             d = []
         if count == len(list_of_products):
             data.append(d)
+
+    products_length = len(list_of_products)
     
-    for dt in data:
-        products = get_values(dt)
-        for user in users:
-            for product in products:
-                if database.exist(user, product):
-                    product_name = products[product]['product_name']
-                    price = products[product]['price']
-                    quantity = products[product]['quantity']
-                    database.write(user, product, product_name, price, quantity)
-                    database.save()
-        time.sleep(random.randint(2,6))
+    count = 0
+    check = []
+
+    while True:
+        for dt in data:
+            print(dt)
+            if dt in check:
+                continue
+            products = get_values(dt)
+            if not products:
+                print('none product')
+                print('sleeping 120s')
+                time.sleep(120)
+                break
+            else:
+                check += dt
+                count += len(dt)
+            for user in users:
+                for product in products:
+                    if database.exist(user, product):
+                        product_name = products[product]['product_name']
+                        price = products[product]['price']
+                        quantity = products[product]['quantity']
+                        database.write(user, product, product_name, price, quantity)
+                        database.save()
+            time.sleep(random.randint(2,6))
+        if count == products_length:
+            print('break while')
+            break  
 
     if t == '00:00':
         for user in users:
@@ -529,12 +552,14 @@ def get_second_quantity(t):
             for product in products:
                 database.set_new_day(user, product)
                 database.save()
+get_second_quantity('')               
+
 
 def scheduler():
     schedule.every().day.at('00:00').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
-    #schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
-    schedule.every().day.at('18:00').do(get_second_quantity, '18:00')
+    schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
+    schedule.every().day.at('19:20').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
     while True:
         schedule.run_pending()
