@@ -424,7 +424,7 @@ def showYesterdayReport(msg):
             sheet['C' + str(count)] = pd[2]
             sheet['D' + str(count)] = pd[3]
             count += 1  
-        filename = 'Отчет за вчера-' + str(chat) + '.xlsx'
+        filename = 'Vchera-' + str(chat) + '.xlsx'
         workbook.save(filename=filename)
         with open(filename, 'rb') as f:
             bot.send_document(chat, f)
