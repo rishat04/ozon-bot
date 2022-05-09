@@ -533,7 +533,7 @@ def get_second_quantity(t):
 def scheduler():
     schedule.every().day.at('00:00').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
-    schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
+    #schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
     schedule.every().day.at('18:00').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
     while True:
