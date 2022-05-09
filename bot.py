@@ -168,7 +168,7 @@ def start_bot(msg):
 
     database.writeUsername(msg.chat.id)
 
-    print(database.getDB())
+    #print(database.getDB())
 
     bot.send_message(msg.chat.id,
     'Привет!\n\n'+
@@ -521,7 +521,7 @@ def get_second_quantity(t):
 
     while True:
         for dt in data:
-            print(dt)
+            #print(dt)
             if dt in check:
                 continue
             products = get_values(dt)
