@@ -284,6 +284,10 @@ def add_product(msg):
             bot.send_message(msg.chat.id, 'Товар {} уже отслеживается.'.format(link))
         else:
             product_id = get_id(link)
+            if product_id == '':
+                continue
+            if product_id[0] not in '0123456789':
+                continue
             database.add_product(user, product_id)
             database.save()
             bot.send_message(msg.chat.id, 'Товар {} поставлен на отслеживание.'.format(link))
@@ -380,7 +384,6 @@ def delete_product(call):
         users = database.get_users()
         keyboard = types.InlineKeyboardMarkup()
         for user in users:
-            #text = '{} - {}'.format(msg.from_user.first_name, user)
             if not database.get_username_from_user(user):
                 username = user
             else:
@@ -412,7 +415,7 @@ def showYesterdayReport(msg):
 
     workbook = Workbook()
     sheet = workbook.active
-    fields = ['Товар',
+    fields = ['Товар', 'ID Товара', 'Ссылка на товар', 
         'Продажи вчера(шт.)', 'Выручка вчера(руб.)', 'Пополнение остатков вчера(шт.)'
     ]
     present_data = []
@@ -447,10 +450,13 @@ def showYesterdayReport(msg):
                 if  size > 0:
                     total_quantity += size
                 else:
-                    recived_quantity += size 
+                    recived_quantity += size
+
+            product_id = id
+            product_link = 'https://www.ozon.ru/product/{}'.format(product_id)
 
             recived_quantity = abs(recived_quantity)
-            present_data.append([name, total_quantity, total_quantity * price, recived_quantity])
+            present_data.append([name, product_id, product_link, total_quantity, total_quantity * price, recived_quantity])
         
         count = 1
         for pd in present_data:
@@ -458,6 +464,8 @@ def showYesterdayReport(msg):
             sheet['B' + str(count)] = pd[1]
             sheet['C' + str(count)] = pd[2]
             sheet['D' + str(count)] = pd[3]
+            sheet['E' + str(count)] = pd[4]            
+            sheet['F' + str(count)] = pd[5]
             count += 1  
         filename = 'Vchera-' + str(chat) + '.xlsx'
         workbook.save(filename=filename)
@@ -469,7 +477,7 @@ def get_report(msg):
     workbook = Workbook()
     sheet = workbook.active
     fields = ['Код товара',
-        'Ссылка на товар', 'Наимеование', 'Продажи(шт)', 'Период отслеживания(в днях)', 'Средняя цена'
+        'Ссылка на товар', 'Наименование', 'Продажи(шт)', 'Период отслеживания(в днях)', 'Средняя цена'
     ]
     present_data = []
     present_data.append(fields)
@@ -526,6 +534,14 @@ def get_report(msg):
     os.remove(filename)
 
 def get_second_quantity(t):
+    
+    if t == '00:00':
+        for user in users:
+            products = database.get_products(user)
+            for product in products:
+                database.set_new_day(user, product)
+                database.save()
+                
     print('get second')
     users = database.get_users()
 
@@ -581,18 +597,13 @@ def get_second_quantity(t):
         if count == products_length:
             print('break while')
             break
-    if t == '00:00':
-        for user in users:
-            products = database.get_products(user)
-            for product in products:
-                database.set_new_day(user, product)
-                database.save()
 
 
 def scheduler():
+    schedule.every().day.at('23:30').do(get_second_quantity, '23:30')
     schedule.every().day.at('00:00').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
-    schedule.every().day.at('12:53').do(get_second_quantity, '12:00')
+    schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
     schedule.every().day.at('18:00').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
     while True:
