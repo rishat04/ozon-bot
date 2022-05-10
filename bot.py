@@ -313,16 +313,18 @@ def get_values(data, with_proxy):
         headers = {'User-Agent' : 'Mozilla/5.0 (Linux; Android 4.4.2; XMP-6250 Build/HAWK) AppleWebKit/537.36 (KHTML, like Gecko)'}
         
         if with_proxy:
+            print('with_proxy', with_proxy)
             s = requests.Session()
             r = s.post(api_cart_url, json=data, proxies=proxy)
+            print('r_with', r.status_code)
             html = s.get('https://www.ozon.ru/cart', proxies=proxy)
-            print('with_proxy', with_proxy)
             print('get_values', html.status_code)
         else:
             s = requests.Session()
             r = s.post(api_cart_url, json=data)
+            print('r_without', r.status_code)
             html = s.get('https://www.ozon.ru/cart')
-            print('with_proxy', with_proxy)
+            print('without proxy', with_proxy)
             print('get_values', html.status_code)
         
         time.sleep(5)
@@ -613,7 +615,7 @@ def scheduler():
     schedule.every().day.at('00:00').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
     schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
-    schedule.every().day.at('18:45').do(get_second_quantity, '18:00')
+    schedule.every().day.at('19:03').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
     while True:
         schedule.run_pending()
