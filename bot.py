@@ -306,19 +306,25 @@ def get_id(url):
     else:
         return url
 
-def get_values(data):
+def get_values(data, with_proxy):
     try:
         proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@ee.mobileproxy.space:64315'}
 
         headers = {'User-Agent' : 'Mozilla/5.0 (Linux; Android 4.4.2; XMP-6250 Build/HAWK) AppleWebKit/537.36 (KHTML, like Gecko)'}
         
+        if with_proxy:
+            s = requests.Session()
+            r = s.post(api_cart_url, json=data, proxies=proxy)
+            html = s.get('https://www.ozon.ru/cart', proxies=proxy)
+            print('with_proxy', with_proxy)
+            print('get_values', html.status_code)
+        else:
+            s = requests.Session()
+            r = s.post(api_cart_url, json=data)
+            html = s.get('https://www.ozon.ru/cart')
+            print('with_proxy', with_proxy)
+            print('get_values', html.status_code)
         
-        s = requests.Session()
-        r = s.post(api_cart_url, json=data, proxies=proxy)
-        
-        html = s.get('https://www.ozon.ru/cart', proxies=proxy)
-        
-        print('get_values', html.status_code)
         time.sleep(5)
         soup = BeautifulSoup(html.text, 'html.parser')
         element = soup.find(id='state-split-1436758-default-1')['data-state']
@@ -567,17 +573,19 @@ def get_second_quantity(t):
     
     count = 0
     check = []
+    with_proxy = True
 
     while True:
         for dt in data:
             if dt in check:
                 continue
-            products = get_values(dt)
+            products = get_values(dt, with_proxy)
             if not products:
                 print('products', products)
                 print('check', check)
                 print('none product')
                 print('sleeping 120s')
+                with_proxy = not with_proxy
                 time.sleep(120)
                 break
             else:
@@ -599,12 +607,13 @@ def get_second_quantity(t):
             break
 
 
+
 def scheduler():
-    schedule.every().day.at('23:30').do(get_second_quantity, '23:30')
+    schedule.every().day.at('23:45').do(get_second_quantity, '23:45')
     schedule.every().day.at('00:00').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
     schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
-    schedule.every().day.at('18:00').do(get_second_quantity, '18:00')
+    schedule.every().day.at('18:45').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
     while True:
         schedule.run_pending()
