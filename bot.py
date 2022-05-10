@@ -168,7 +168,7 @@ def start_bot(msg):
 
     database.writeUsername(msg.chat.id)
 
-    print(database.getDB())
+    #print(database.getDB())
 
     bot.send_message(msg.chat.id,
     'Привет!\n\n'+
@@ -571,7 +571,7 @@ def get_second_quantity(t):
 
 
 def scheduler():
-    schedule.every().day.at('10:15').do(get_second_quantity, '00:00')
+    schedule.every().day.at('00:00').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
     schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
     schedule.every().day.at('19:20').do(get_second_quantity, '18:00')
