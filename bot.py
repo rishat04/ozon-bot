@@ -51,6 +51,8 @@ class DataBase:
             self.db[user] = {}
 
     def writeProduct(self, user, product):
+        if 'products' not in self.db[user]:
+            self.db[user]['prodcuts'] = {}
         if product not in self.db[user]['products']:
             self.db[user]['products'][product] = {}
 
@@ -145,7 +147,7 @@ class DataBase:
 
     def exist(self, user, product):
         if user in self.db.keys():
-            if product in self.db[user]['products'].keys():
+            if str(product) in self.db[user]['products']:
                 return True
             return False
 
@@ -208,6 +210,23 @@ def send_database_two(msg):
         
         with open('database.db', 'rb') as f:
             bot.send_document(msg.chat.id, f)
+
+@bot.message_handler(commands=['sendall'])
+def send_message_to(msg):
+    bot.send_message(msg.chat.id, 'Пароль?')
+    bot.register_next_step_handler(msg, send_message_to_get)
+
+def send_message_to_get(msg):
+    if msg.text == 'maxbel':
+        bot.send_message(msg.chat.id, 'Верный пароль')
+        bot.send_message(msg.chat.id, 'Введите текст для отправки:')
+        bot.register_next_step_handler(msg, send_message_to_all)
+
+def send_message_to_all(msg):
+    text = msg.text
+    users = database.get_users()
+    for user in users:
+        bot.send_message(user, text)
         
 
 @bot.message_handler(content_types=['text'])
@@ -287,19 +306,19 @@ def get_values(data):
     try:
         proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@ee.mobileproxy.space:64315'}
 
-        #headers = {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36'}
+        headers = {'User-Agent' : 'Mozilla/5.0 (Linux; Android 4.4.2; XMP-6250 Build/HAWK) AppleWebKit/537.36 (KHTML, like Gecko)'}
         
         
         s = requests.Session()
         r = s.post(api_cart_url, json=data, proxies=proxy)
-        time.sleep(random.randint(10, 30))
         
         html = s.get('https://www.ozon.ru/cart', proxies=proxy)
         
         print('get_values', html.status_code)
-
+        time.sleep(5)
         soup = BeautifulSoup(html.text, 'html.parser')
         element = soup.find(id='state-split-1436758-default-1')['data-state']
+
         print('get element work')
         items = json.loads(element)
         products = {}
@@ -484,7 +503,6 @@ def get_report(msg):
                 else:
                     recived_quantity += size 
             count_days += 1
-            print(total_quantity)
         product_url = 'https://www.ozon.ru/product/' + id
         if count_days == 0:
             present_data.append([id, product_url, name, 0, 0, 0])
@@ -508,6 +526,7 @@ def get_report(msg):
     os.remove(filename)
 
 def get_second_quantity(t):
+    print('get second')
     users = database.get_users()
 
     list_of_products = []
@@ -515,13 +534,6 @@ def get_second_quantity(t):
         list_of_products += database.get_products(user)
 
     list_of_products = list(set(list_of_products))
-
-    if t == '00:00':
-        for user in users:
-            products = database.get_products(user)
-            for product in products:
-                database.set_new_day(user, product)
-                database.save()
 
     data = []
     count = 0
@@ -542,11 +554,12 @@ def get_second_quantity(t):
 
     while True:
         for dt in data:
-            #print(dt)
             if dt in check:
                 continue
             products = get_values(dt)
             if not products:
+                print('products', products)
+                print('check', check)
                 print('none product')
                 print('sleeping 120s')
                 time.sleep(120)
@@ -554,6 +567,8 @@ def get_second_quantity(t):
             else:
                 check += dt
                 count += len(dt)
+                #print('work check', check)
+                #print('work count', count)
             for user in users:
                 for product in products:
                     if database.exist(user, product):
@@ -565,9 +580,13 @@ def get_second_quantity(t):
             time.sleep(random.randint(2,6))
         if count == products_length:
             print('break while')
-            break  
-
-#get_second_quantity('')               
+            break
+    if t == '00:00':
+        for user in users:
+            products = database.get_products(user)
+            for product in products:
+                database.set_new_day(user, product)
+                database.save()
 
 
 def scheduler():
