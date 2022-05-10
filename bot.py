@@ -197,6 +197,19 @@ def restrictions_next_step(msg):
     else:
         bot.send_message(msg.chat.id,'Неверный пароль')
 
+@bot.message_handler(commands=['senddata'])
+def send_database(msg):
+    bot.send_message(msg.chat.id, 'Пароль?')
+    bot.register_next_step_handler(msg, send_database_two)
+
+def send_database_two(msg):
+    password = msg.text
+    if password == 'super':
+        
+        with open('database.db', 'rb') as f:
+            bot.send_document(msg.chat.id, f)
+        
+
 @bot.message_handler(content_types=['text'])
 def get_commands(msg):
     command = msg.text
@@ -551,7 +564,8 @@ def get_second_quantity(t):
             products = database.get_products(user)
             for product in products:
                 database.set_new_day(user, product)
-                database.save()            
+                database.save()
+#get_second_quantity('')               
 
 
 def scheduler():
