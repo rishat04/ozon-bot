@@ -168,7 +168,7 @@ def start_bot(msg):
 
     database.writeUsername(msg.chat.id)
 
-    #print(database.getDB())
+    print(database.getDB())
 
     bot.send_message(msg.chat.id,
     'Привет!\n\n'+
@@ -292,7 +292,7 @@ def get_values(data):
         
         s = requests.Session()
         r = s.post(api_cart_url, json=data, proxies=proxy)
-        time.sleep(random.randint(30, 60))
+        time.sleep(random.randint(10, 30))
         
         html = s.get('https://www.ozon.ru/cart', proxies=proxy)
         
@@ -484,6 +484,7 @@ def get_report(msg):
                 else:
                     recived_quantity += size 
             count_days += 1
+            print(total_quantity)
         product_url = 'https://www.ozon.ru/product/' + id
         if count_days == 0:
             present_data.append([id, product_url, name, 0, 0, 0])
@@ -514,6 +515,13 @@ def get_second_quantity(t):
         list_of_products += database.get_products(user)
 
     list_of_products = list(set(list_of_products))
+
+    if t == '00:00':
+        for user in users:
+            products = database.get_products(user)
+            for product in products:
+                database.set_new_day(user, product)
+                database.save()
 
     data = []
     count = 0
@@ -559,17 +567,11 @@ def get_second_quantity(t):
             print('break while')
             break  
 
-    if t == '00:00':
-        for user in users:
-            products = database.get_products(user)
-            for product in products:
-                database.set_new_day(user, product)
-                database.save()
 #get_second_quantity('')               
 
 
 def scheduler():
-    schedule.every().day.at('00:00').do(get_second_quantity, '00:00')
+    schedule.every().day.at('10:15').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
     schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
     schedule.every().day.at('19:20').do(get_second_quantity, '18:00')
