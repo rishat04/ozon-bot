@@ -543,6 +543,7 @@ def get_report(msg):
 
 def get_second_quantity(t):
     
+    users = database.get_users()
     if t == '00:00':
         for user in users:
             products = database.get_products(user)
@@ -551,7 +552,6 @@ def get_second_quantity(t):
                 database.save()
                 
     print('get second')
-    users = database.get_users()
 
     list_of_products = []
     for user in users:
@@ -612,7 +612,7 @@ def get_second_quantity(t):
 
 def scheduler():
     schedule.every().day.at('23:45').do(get_second_quantity, '23:45')
-    schedule.every().day.at('00:00').do(get_second_quantity, '00:00')
+    schedule.every().day.at('00:10').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
     schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
     schedule.every().day.at('19:03').do(get_second_quantity, '18:00')
