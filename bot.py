@@ -594,7 +594,7 @@ def get_second_quantity(t):
                 check += dt
                 count += len(dt)
                 #print('work check', check)
-                #print('work count', count)
+                print('work count', count)
             for user in users:
                 for product in products:
                     if database.exist(user, product):
@@ -604,7 +604,7 @@ def get_second_quantity(t):
                         database.write(user, product, product_name, price, quantity)
                         database.save()
             time.sleep(random.randint(2,6))
-        if count == products_length:
+        if count >= products_length:
             print('break while')
             break
 
@@ -612,7 +612,7 @@ def get_second_quantity(t):
 
 def scheduler():
     schedule.every().day.at('23:45').do(get_second_quantity, '23:45')
-    schedule.every().day.at('08:55').do(get_second_quantity, '00:00')
+    schedule.every().day.at('10:05').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
     schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
     schedule.every().day.at('19:03').do(get_second_quantity, '18:00')
