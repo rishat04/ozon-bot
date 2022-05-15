@@ -12,6 +12,7 @@ from openpyxl import Workbook
 import time
 import json
 import random
+from telebot import apihelper
 
 NoneType = type(None)
 
@@ -20,6 +21,7 @@ token = "5308846060:AAE4ishCZ3H0Z0K8DgJ9ZIRKGgCGIZnDVBs"
 token_for_ozon = "5326675413:AAEsPlhta4gDx7QyNtXN_eCvjiGDcqaK4eY"
 
 bot = telebot.TeleBot(token=token_for_ozon)
+apihelper.proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@ee.mobileproxy.space:64315'}
 
 api_cart_url = 'https://www.ozon.ru/api/composer-api.bx/_action/addToCart'
 
