@@ -21,7 +21,7 @@ token = "5308846060:AAE4ishCZ3H0Z0K8DgJ9ZIRKGgCGIZnDVBs"
 token_for_ozon = "5326675413:AAEsPlhta4gDx7QyNtXN_eCvjiGDcqaK4eY"
 
 bot = telebot.TeleBot(token=token_for_ozon)
-apihelper.proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@ee.mobileproxy.space:64315'}
+#apihelper.proxy = {'https':'http://Yt3At8:TaJvyF9GaC4N@ee.mobileproxy.space:64315'}
 
 api_cart_url = 'https://www.ozon.ru/api/composer-api.bx/_action/addToCart'
 
@@ -614,10 +614,10 @@ def get_second_quantity(t):
 
 def scheduler():
     schedule.every().day.at('23:45').do(get_second_quantity, '23:45')
-    schedule.every().day.at('11:07').do(get_second_quantity, '00:00')
+    schedule.every().day.at('00:30').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
-    schedule.every().day.at('12:00').do(get_second_quantity, '12:00')
-    schedule.every().day.at('19:03').do(get_second_quantity, '18:00')
+    schedule.every().day.at('11:12').do(get_second_quantity, '12:00')
+    schedule.every().day.at('18:03').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
     while True:
         schedule.run_pending()
