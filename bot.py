@@ -616,7 +616,7 @@ def scheduler():
     schedule.every().day.at('23:45').do(get_second_quantity, '23:45')
     schedule.every().day.at('00:30').do(get_second_quantity, '00:00')
     schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
-    schedule.every().day.at('11:12').do(get_second_quantity, '12:00')
+    schedule.every().day.at('11:14').do(get_second_quantity, '12:00')
     schedule.every().day.at('18:03').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
     while True:
