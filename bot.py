@@ -165,9 +165,9 @@ def get_quantity(string):
 @bot.message_handler(commands=['start'])
 def start_bot(msg):
     keyboard = types.ReplyKeyboardMarkup()
-    keyboard.row(types.InlineKeyboardButton('Продажи конкурентов за вчера'))
     keyboard.row(types.InlineKeyboardButton('Добавить товар'))
     keyboard.row(types.InlineKeyboardButton('Удалить товар'))
+    keyboard.row(types.InlineKeyboardButton('Продажи конкурентов за вчера'))
     keyboard.row(types.InlineKeyboardButton('Подробный отчет по всем товарам'))
 
     database.writeUsername(msg.chat.id)
@@ -225,10 +225,15 @@ def send_message_to_get(msg):
         bot.register_next_step_handler(msg, send_message_to_all)
 
 def send_message_to_all(msg):
+    keyboard = types.ReplyKeyboardMarkup()
+    keyboard.row(types.InlineKeyboardButton('Добавить товар'))
+    keyboard.row(types.InlineKeyboardButton('Удалить товар'))
+    keyboard.row(types.InlineKeyboardButton('Продажи конкурентов за вчера'))
+    keyboard.row(types.InlineKeyboardButton('Подробный отчет по всем товарам'))
     text = msg.text
     users = database.get_users()
     for user in users:
-        bot.send_message(user, text)
+        bot.send_message(user, text, reply_markup=keyboard)
         
 
 @bot.message_handler(content_types=['text'])
@@ -614,10 +619,10 @@ def get_second_quantity(t):
 
 def scheduler():
     schedule.every().day.at('23:45').do(get_second_quantity, '23:45')
-    schedule.every().day.at('11:45').do(get_second_quantity, '00:00')
-    schedule.every().day.at('11:42').do(get_second_quantity, '06:00')
+    schedule.every().day.at('00:30').do(get_second_quantity, '00:00')
+    schedule.every().day.at('06:00').do(get_second_quantity, '06:00')
     schedule.every().day.at('11:30').do(get_second_quantity, '12:00')
-    schedule.every().day.at('18:03').do(get_second_quantity, '18:00')
+    schedule.every().day.at('18:00').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
     while True:
         schedule.run_pending()
