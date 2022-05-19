@@ -120,6 +120,9 @@ class DataBase:
         return self.db.keys()
 
     def get_products(self, user):
+        if 'products' not in self.db['user']:
+            self.db['user']['products'] = {}
+            self.save()
         return self.db[user]['products']
 
     def get_product_name(self, user, product):
@@ -619,8 +622,8 @@ def get_second_quantity(t):
 
 def scheduler():
     schedule.every().day.at('23:45').do(get_second_quantity, '23:45')
-    schedule.every().day.at('10:26').do(get_second_quantity, '00:00')
-    schedule.every().day.at('10:25').do(get_second_quantity, '06:00')
+    schedule.every().day.at('10:30').do(get_second_quantity, '00:00')
+    schedule.every().day.at('10:28').do(get_second_quantity, '06:00')
     schedule.every().day.at('11:30').do(get_second_quantity, '12:00')
     schedule.every().day.at('18:00').do(get_second_quantity, '18:00')
     schedule.every().day.at('12:15').do(showYesterdayReport, NoneType)
